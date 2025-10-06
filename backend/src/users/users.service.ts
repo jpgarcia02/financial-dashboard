@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -38,19 +38,73 @@ export class UsersService {
   return noPassword;
 }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    return await this.userRepository.find() ;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+   async findOneById(id: string) {
+    // Buscar el usuario por id
+    const user = await this.userRepository.findOne({ where: { id } });
+ 
+    if (!user) {
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    }
+    const { password, ...noPassword } = user;
+
+    return noPassword;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+   async findOneByEmail(email: string) {
+    // Buscar el usuario por email
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    
+    if (!user) {
+      throw new NotFoundException(`Usuario con email ${email} no encontrado`);
+    }
+
+    
+    const { password, ...noPassword } = user;
+
+    return noPassword;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    // Buscar usuario
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    }
+
+    // Si viene contraseña, hashearla
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
+    // Actualizar campos permitidos
+    const updatedUser = { ...user, ...updateUserDto };
+
+    // Guardar cambios
+    const savedUser = await this.userRepository.save(updatedUser);
+
+    
+    const { password, ...noPassword } = savedUser;
+    return noPassword;
+  }
+
+ 
+  async remove(id: string) {
+    // Buscar usuario
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`Usuario con id ${id} no encontrado`);
+    }
+
+    // Eliminar usuario
+    await this.userRepository.remove(user);
+
+    
+    
+    return "Usuaario eliminado exitosamente";
   }
 }
