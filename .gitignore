@@ -21,3 +21,8 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+
+# Build y cachés globales
+**/.env.local
+**/.cache/
