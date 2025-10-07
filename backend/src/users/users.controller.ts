@@ -1,34 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 
+import { 
+  Controller, 
+  Get, 
+  Patch, 
+  Delete, 
+  Body, 
+  UseGuards,
+  Request
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { UsersService } from './users.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+@ApiTags('Users')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard) // ✅ Proteger todas las rutas
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return await this.usersService.create(createUserDto);
+  @Get('me')
+  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
+  async getProfile(@Request() req) {
+    return this.usersService.findOneById(req.user.id);
   }
 
-  @Get()
-  async findAll() {
-    return await this.usersService.findAll();
+  @Patch('me')
+  @ApiOperation({ summary: 'Actualizar perfil del usuario autenticado' })
+  async updateProfile(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(req.user.id, updateUserDto);
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return await this.usersService.findOneById(id); // Usamos findOneById que acepta UUID
-  }
-
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return await this.usersService.update(id, updateUserDto); // UUID
-  }
-
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return await this.usersService.remove(id); // UUID
+  @Delete('me')
+  @ApiOperation({ summary: 'Eliminar cuenta del usuario autenticado' })
+  async deleteAccount(@Request() req) {
+    return this.usersService.remove(req.user.id);
   }
 }

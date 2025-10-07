@@ -5,11 +5,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -23,25 +23,22 @@ export class AuthService {
    * Registro de usuario
    */
   async register(registerDto: RegisterDto) {
-    // 1️⃣ Verificar si ya existe el email
+    // Verificar si ya existe el email
     const existingUser = await this.usersService
       .findOneByEmail(registerDto.email)
       .catch(() => null);
 
     if (existingUser) {
-      throw new ConflictException('El email que ingresaste ya existe');
+      throw new ConflictException('El email ya está registrado');
     }
 
-    // 2️⃣ Crear el usuario (UsersService ya hashea la contraseña)
+    // Crear el usuario (UsersService ya hashea la contraseña)
     const user = await this.usersService.create(registerDto);
 
-    // 3️⃣ Generar tokens
+    // Generar tokens
     const tokens = await this.getTokens(user.id, user.email);
 
-    // 4️⃣ (Opcional) Guardar hash del refresh token
-    // await this.usersService.updateRefreshTokenHash(user.id, tokens.refresh_token);
-
-    // 5️⃣ Retornar tokens + datos del usuario
+    // Retornar tokens + datos del usuario
     return {
       user,
       ...tokens,
@@ -49,40 +46,37 @@ export class AuthService {
   }
 
   /**
-   * Inicio de sesión
+   * Inicio de sesión - CORREGIDO
    */
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // 1️⃣ Buscar el usuario (sin lanzar error si no existe)
-    const userRecord = await this.usersService
-      .findOneByEmail(email)
+    // ✅ Usar el nuevo método que retorna el usuario CON password
+    const user = await this.usersService
+      .findOneByEmailWithPassword(email)
       .catch(() => null);
 
-    if (!userRecord) {
+    if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // ⚠️ Necesitamos el password para comparar (ajuste si tu método lo oculta)
-    const user = await (this.usersService as any).userRepository.findOne({
-      where: { email },
-    });
-
-    // 2️⃣ Comparar contraseña
+    // Comparar contraseña
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // 3️⃣ Generar tokens
+    // Generar tokens
     const tokens = await this.getTokens(user.id, user.email);
 
-    // 4️⃣ (Opcional) Guardar hash del refresh token
-    // await this.usersService.updateRefreshTokenHash(user.id, tokens.refresh_token);
-
-    // 5️⃣ Retornar
+    // Retornar sin contraseña
     const { password: _, ...userData } = user;
-    return { user: userData, ...tokens };
+    
+    return { 
+      user: userData, 
+      ...tokens 
+    };
   }
 
   /**
@@ -92,16 +86,22 @@ export class AuthService {
     const { refreshToken } = refreshTokenDto;
 
     try {
-      // 1️⃣ Verificar el refresh token
+      // Verificar el refresh token
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      // 2️⃣ Generar nuevos tokens
-      const tokens = await this.getTokens(payload.sub, payload.email);
+      // Verificar que el usuario aún existe
+      const user = await this.usersService
+        .findOneById(payload.sub)
+        .catch(() => null);
 
-      // 3️⃣ (Opcional) Guardar nuevo hash de refresh token
-      // await this.usersService.updateRefreshTokenHash(payload.sub, tokens.refresh_token);
+      if (!user) {
+        throw new UnauthorizedException('Usuario no encontrado');
+      }
+
+      // Generar nuevos tokens
+      const tokens = await this.getTokens(payload.sub, payload.email);
 
       return tokens;
     } catch (error) {
@@ -118,13 +118,11 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn:
-          this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn:
-          this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
+        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
       }),
     ]);
 

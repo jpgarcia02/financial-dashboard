@@ -1,25 +1,40 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
 
-  // Configuración global de validaciones (para DTOs)
+  // CORS básico
+  app.enableCors();
+
+  // Validación automática de DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // elimina propiedades que no están en el DTO
-      forbidNonWhitelisted: true, // lanza error si llegan propiedades no esperadas
-      transform: true, // convierte automáticamente los tipos (por ejemplo, string a number)
+      whitelist: true,
+      transform: true,
     }),
   );
 
-  // ConfigService para leer variables de entorno
-  const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT') || 3000;
+  // Prefijo /api para todas las rutas
+  app.setGlobalPrefix('api');
 
-  await app.listen(port);
-  console.log(`🚀 Server running on http://localhost:${port}`);
+  // Swagger (documentación)
+  const config = new DocumentBuilder()
+    .setTitle('Financial Dashboard API')
+    .setDescription('API para gestión financiera personal')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  await app.listen(3000);
+  
+  console.log('🚀 API corriendo en: http://localhost:3000');
+  console.log('📚 Swagger: http://localhost:3000/api/docs');
 }
+
 bootstrap();
