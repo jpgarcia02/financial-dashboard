@@ -1,8 +1,8 @@
 
-import { RefreshToken } from 'src/auth/entities/refresh-token.entity';
-import { Budget } from 'src/budgets/entities/budget.entity';
-import { Category } from 'src/categories/entities/category.entity';
-import { Transaction } from 'src/transactions/entities/transaction.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import { Budget } from '../../budgets/entities/budget.entity';
+import { Category } from '../../categories/entities/category.entity';
+import { Transaction } from '../../transactions/entities/transaction.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

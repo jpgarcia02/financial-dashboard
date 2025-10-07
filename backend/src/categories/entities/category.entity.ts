@@ -1,6 +1,6 @@
-import { Budget } from "src/budgets/entities/budget.entity";
-import { Transaction } from "src/transactions/entities/transaction.entity";
-import { User } from "src/users/entities/user.entity";
+import { Budget } from '../../budgets/entities/budget.entity';
+import { Transaction } from '../../transactions/entities/transaction.entity';
+import { User } from '../../users/entities/user.entity';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 
