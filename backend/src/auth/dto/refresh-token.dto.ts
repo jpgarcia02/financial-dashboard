@@ -1,9 +1,11 @@
 
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class RefreshTokenDto {
 
+    @ApiProperty({ description: 'Refresh token proporcionado al iniciar sesión', example: 'eyJhbGciOiJIUzI1...' })
     @IsString()
     @IsNotEmpty()
-    refreshToken:string 
+    refreshToken: string;
 }
