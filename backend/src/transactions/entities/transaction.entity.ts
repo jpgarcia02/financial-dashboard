@@ -1,5 +1,6 @@
+import { Category } from "src/categories/entities/category.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 
 export enum TransactionType {
@@ -53,6 +54,24 @@ export class Transaction {
         @ManyToOne(() => User, (user) => user.transactions, { onDelete: 'CASCADE' })
         @JoinColumn({ name: 'userId' })
         user: User;
+
+        @ManyToOne(() => Category, (category) => category.transactions, {
+        onDelete: 'SET NULL',
+        nullable: true,
+        })
+        @JoinColumn({ name: 'categoryId' })
+        category: Category | null;
+
+
+        @Column({ type: 'timestamp', nullable: true })
+        deletedAt: Date|null
+
+
+        @CreateDateColumn()
+        createdAt: Date;
+        
+        @UpdateDateColumn()
+        updatedAt: Date;
 
 
     
