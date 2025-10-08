@@ -200,4 +200,54 @@ export class TransactionsService {
      return { message: 'Transacción eliminada correctamente' };
     
   }
+
+  async getSummary(userId: string, startDate?: string, endDate?: string) {
+  let startDateObj: Date | undefined;
+  let endDateObj: Date | undefined;
+
+  if (startDate) {
+    startDateObj = new Date(startDate);
+    if (isNaN(startDateObj.getTime())) throw new BadRequestException('startDate inválida');
+    startDateObj.setHours(0, 0, 0, 0);
+  }
+
+  if (endDate) {
+    endDateObj = new Date(endDate);
+    if (isNaN(endDateObj.getTime())) throw new BadRequestException('endDate inválida');
+    endDateObj.setHours(23, 59, 59, 999);
+  }
+
+  if (startDateObj && endDateObj && startDateObj > endDateObj) {
+    throw new BadRequestException('La fecha inicial no puede ser posterior a la fecha final');
+  }
+
+  const qbIncome = this.transactionRepository.createQueryBuilder('transaction')
+    .where('transaction.userId = :userId', { userId })
+    .andWhere('transaction.deletedAt IS NULL')
+    .andWhere('transaction.type = :type', { type: 'INCOME' });
+
+  if (startDateObj) qbIncome.andWhere('transaction.date >= :startDate', { startDate: startDateObj });
+  if (endDateObj) qbIncome.andWhere('transaction.date <= :endDate', { endDate: endDateObj });
+
+  qbIncome.select('SUM(transaction.amount)', 'total');
+  const incomeResult = await qbIncome.getRawOne();
+  const totalIncome = incomeResult?.total ? Number(incomeResult.total) : 0;
+
+  const qbExpense = this.transactionRepository.createQueryBuilder('transaction')
+    .where('transaction.userId = :userId', { userId })
+    .andWhere('transaction.deletedAt IS NULL')
+    .andWhere('transaction.type = :type', { type: 'EXPENSE' });
+
+  if (startDateObj) qbExpense.andWhere('transaction.date >= :startDate', { startDate: startDateObj });
+  if (endDateObj) qbExpense.andWhere('transaction.date <= :endDate', { endDate: endDateObj });
+
+  qbExpense.select('SUM(transaction.amount)', 'total');
+  const expenseResult = await qbExpense.getRawOne();
+  const totalExpense = expenseResult?.total ? Number(expenseResult.total) : 0;
+
+  const balance = totalIncome - totalExpense;
+  const savings = balance;
+
+  return { totalIncome, totalExpense, balance, savings };
+}
 }
