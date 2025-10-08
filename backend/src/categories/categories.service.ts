@@ -90,7 +90,7 @@ export class CategoriesService {
     
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto,userId:string) {
+  async update(userId: string, id: string, updateCategoryDto: UpdateCategoryDto) {
     const searchCategory = await this.categoryRepository.findOne({where:{id,userId}})
      if (!searchCategory) {
     throw new NotFoundException('Categoria no encontrada');
