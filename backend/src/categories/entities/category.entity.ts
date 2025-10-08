@@ -1,13 +1,9 @@
 import { Budget } from '../../budgets/entities/budget.entity';
-import { Transaction } from '../../transactions/entities/transaction.entity';
+import { Transaction, TransactionType } from '../../transactions/entities/transaction.entity';
 import { User } from '../../users/entities/user.entity';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 
-export enum CategoryType {
-  INCOME = 'INCOME',
-  EXPENSE = 'EXPENSE',
-}
 
 @Entity()
 export class Category {
@@ -20,8 +16,8 @@ export class Category {
             @Column({ type: 'varchar', length: 100 })
             name: string;
             
-            @Column({ type: 'enum', enum: CategoryType })
-            type: CategoryType;
+            @Column({ type: 'enum', enum: TransactionType })
+            type: TransactionType;
         
             @Column({ type: 'varchar', length: 7 })
             color: string;
