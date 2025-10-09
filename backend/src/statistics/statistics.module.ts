@@ -8,6 +8,7 @@ import { Transaction } from 'src/transactions/entities/transaction.entity';
 @Module({
   imports:[TypeOrmModule.forFeature([Category,Transaction])],
   controllers: [StatisticsController],
-  providers: [StatisticsService]
+  providers: [StatisticsService],
+  exports:[StatisticsService]
 })
 export class StatisticsModule {}
