@@ -7,12 +7,14 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { CategoriesModule } from 'src/categories/categories.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([RefreshToken]), // <-- Añadir esto
     ConfigModule,
     UsersModule,
+    CategoriesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
