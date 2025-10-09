@@ -10,6 +10,7 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CategoriesService } from 'src/categories/categories.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly categoriesService: CategoriesService
   ) {}
 
   /**
@@ -34,6 +36,8 @@ export class AuthService {
 
     // Crear el usuario (UsersService ya hashea la contraseña)
     const user = await this.usersService.create(registerDto);
+
+    await this.categoriesService.createDefaults(user.id);
 
     // Generar tokens
     const tokens = await this.getTokens(user.id, user.email);

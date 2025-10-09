@@ -1,15 +1,20 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { CategoriesModule } from 'src/categories/categories.module';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([RefreshToken]), // <-- Añadir esto
     ConfigModule,
     UsersModule,
+    CategoriesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
